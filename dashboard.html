@@ -40,7 +40,7 @@
   <div class="main-wrapper">
     <div class="page-content">
 
-      <!-- Welcome bar -->
+      <!-- welcome bar -->
       <div class="welcome-bar">
         <div>
           <h3>Good morning, Admin 👋</h3>
@@ -49,7 +49,7 @@
         <div class="date-pill"><i class="fa fa-calendar-alt me-2"></i><span id="todayDate"></span></div>
       </div>
 
-      <!-- KPI Cards -->
+      <!-- kpi Cards -->
       <div class="row g-3 mb-4">
         <div class="col-md-3">
           <div class="stat-card">
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <!-- Charts row -->
+      <!-- charts row -->
       <div class="row g-3 mb-4">
         <div class="col-md-8">
           <div class="card h-100">
@@ -120,7 +120,7 @@
         </div>
       </div>
 
-      <!-- Bottom row -->
+      <!-- bottom row -->
       <div class="row g-3">
         <div class="col-md-5">
           <div class="card">
@@ -210,7 +210,7 @@
     renderLayout('Dashboard');
     document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-    // Revenue Chart
+    // revenue Chart
     const rCtx = document.getElementById('revenueChart').getContext('2d');
     const gradient = rCtx.createLinearGradient(0, 0, 0, 200);
     gradient.addColorStop(0, 'rgba(124,58,237,0.25)');
@@ -237,7 +237,7 @@
       }
     });
 
-    // Donut Chart
+    // donut Chart
     new Chart(document.getElementById('donutChart'), {
       type: 'doughnut',
       data: {
