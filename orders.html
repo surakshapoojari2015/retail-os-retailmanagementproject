@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Orders</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .badge-delivered  { background:#d1fae5;color:#065f46; }
+    .badge-processing { background:#fef3c7;color:#92400e; }
+    .badge-shipped    { background:#dbeafe;color:#1e40af; }
+    .badge-cancelled  { background:#fee2e2;color:#991b1b; }
+    .action-btn { background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:7px;font-size:0.85rem;transition:all 0.15s; }
+    .action-btn.view { color:var(--accent3); } .action-btn.view:hover { background:#d1fae5; }
+    .action-btn.edit { color:var(--accent2); } .action-btn.edit:hover { background:#fef3c7; }
+    .action-btn.del  { color:#ef4444; }       .action-btn.del:hover  { background:#fee2e2; }
+    .filter-bar { background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem; }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div><h2>Orders</h2><p>Track and manage all customer orders</p></div>
+        <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#orderModal" onclick="openAdd()">
+          <i class="fa fa-plus"></i> New Order
+        </button>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Total Orders</div><div class="value" style="font-size:1.5rem">1,284</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Processing</div><div class="value" style="font-size:1.5rem;color:var(--accent2)">48</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Shipped</div><div class="value" style="font-size:1.5rem;color:#3b82f6">112</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Delivered</div><div class="value" style="font-size:1.5rem;color:var(--accent3)">1,089</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Cancelled</div><div class="value" style="font-size:1.5rem;color:var(--accent)">35</div></div></div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="topbar-search" style="max-width:280px;">
+          <i class="fa fa-search search-icon"></i>
+          <input type="text" placeholder="Search orders…" id="searchInput" oninput="filterTable()"/>
+        </div>
+        <select class="form-select" style="max-width:160px" id="statusFilter" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option>Processing</option><option>Shipped</option>
+          <option>Delivered</option><option>Cancelled</option>
+        </select>
+        <div class="ms-auto"><button class="btn-ghost"><i class="fa fa-file-export me-1"></i>Export</button></div>
+      </div>
+
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th><input type="checkbox" style="accent-color:var(--accent)"/></th>
+                <th>Order ID</th><th>Customer</th><th>Items</th>
+                <th>Total</th><th>Date</th><th>Payment</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+        <div style="padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid var(--border);">
+          <span style="font-size:0.82rem;color:var(--muted)">Showing <span id="showCount">0</span> of <span id="totalCount">0</span> orders</span>
+          <nav><ul class="pagination mb-0">
+            <li class="page-item disabled"><a class="page-link">&laquo;</a></li>
+            <li class="page-item active"><a class="page-link">1</a></li>
+            <li class="page-item"><a class="page-link">2</a></li>
+            <li class="page-item"><a class="page-link">&raquo;</a></li>
+          </ul></nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Order Modal -->
+  <div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="viewOrderId">Order Details</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="viewOrderBody"></div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Close</button>
+          <button class="btn-primary-custom"><i class="fa fa-print"></i> Print Invoice</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Order Modal -->
+  <div class="modal fade" id="orderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">New Order</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Customer Name</label><input class="form-control" id="oCust" placeholder="Customer name"/></div>
+            <div class="col-md-6"><label class="form-label">Items</label><input class="form-control" id="oItems" placeholder="2" type="number"/></div>
+            <div class="col-md-6"><label class="form-label">Total Amount (₹)</label><input class="form-control" id="oTotal" placeholder="0.00" type="number"/></div>
+            <div class="col-md-6"><label class="form-label">Payment Method</label>
+              <select class="form-select" id="oPayment"><option>UPI</option><option>Card</option><option>Cash</option><option>Net Banking</option></select>
+            </div>
+            <div class="col-md-6"><label class="form-label">Status</label>
+              <select class="form-select" id="oStatus"><option>Processing</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn-primary-custom" onclick="saveOrder()"><i class="fa fa-save"></i> Save Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Orders');
+    let orders = [
+      {id:'ORD-1082',customer:'Priya Sharma',  items:3,total:12499,date:'2025-06-10',payment:'UPI',        status:'Processing'},
+      {id:'ORD-1081',customer:'Arjun Mehta',   items:1,total:65999,date:'2025-06-09',payment:'Card',       status:'Shipped'},
+      {id:'ORD-1080',customer:'Meera Krishnan',items:5,total:8750, date:'2025-06-08',payment:'Cash',       status:'Delivered'},
+      {id:'ORD-1079',customer:'Sneha Patel',   items:2,total:18999,date:'2025-06-07',payment:'UPI',        status:'Delivered'},
+      {id:'ORD-1078',customer:'Kavitha Rao',   items:4,total:5299, date:'2025-06-06',payment:'Net Banking', status:'Delivered'},
+      {id:'ORD-1077',customer:'Suresh Reddy',  items:1,total:3499, date:'2025-06-05',payment:'UPI',        status:'Cancelled'},
+      {id:'ORD-1076',customer:'Mohammed Ali',  items:2,total:9998, date:'2025-06-04',payment:'Card',       status:'Delivered'},
+      {id:'ORD-1075',customer:'Anjali Singh',  items:3,total:14700,date:'2025-06-03',payment:'UPI',        status:'Delivered'},
+      {id:'ORD-1074',customer:'Ravi Kumar',    items:1,total:2400, date:'2025-06-02',payment:'Cash',       status:'Delivered'},
+      {id:'ORD-1073',customer:'Deepak Nair',   items:7,total:32000,date:'2025-06-01',payment:'Card',       status:'Shipped'},
+      {id:'ORD-1072',customer:'Priya Sharma',  items:2,total:7499, date:'2025-05-31',payment:'UPI',        status:'Delivered'},
+      {id:'ORD-1071',customer:'Arjun Mehta',   items:1,total:22999,date:'2025-05-30',payment:'Card',       status:'Delivered'},
+    ];
+
+    function statusBadge(s) {
+      const map = {Delivered:'badge-delivered',Processing:'badge-processing',Shipped:'badge-shipped',Cancelled:'badge-cancelled'};
+      return `<span class="badge-status ${map[s]||''}">${s}</span>`;
+    }
+
+    function renderTable(data) {
+      document.getElementById('ordersBody').innerHTML = data.map(o => `
+        <tr>
+          <td><input type="checkbox" style="accent-color:var(--accent)"/></td>
+          <td style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;color:var(--accent)">${o.id}</td>
+          <td style="font-size:0.88rem;font-weight:500">${o.customer}</td>
+          <td style="font-size:0.85rem">${o.items} item${o.items>1?'s':''}</td>
+          <td style="font-family:'Syne',sans-serif;font-weight:800">₹${o.total.toLocaleString('en-IN')}</td>
+          <td style="font-size:0.82rem;color:var(--muted)">${o.date}</td>
+          <td style="font-size:0.82rem">${o.payment}</td>
+          <td>${statusBadge(o.status)}</td>
+          <td>
+            <button class="action-btn view" onclick="viewOrder('${o.id}')"><i class="fa fa-eye"></i></button>
+            <button class="action-btn edit" onclick="editOrderStatus('${o.id}')"><i class="fa fa-pen"></i></button>
+            <button class="action-btn del"  onclick="cancelOrder('${o.id}')"><i class="fa fa-ban"></i></button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('showCount').textContent = data.length;
+      document.getElementById('totalCount').textContent = orders.length;
+    }
+
+    function filterTable() {
+      const q  = document.getElementById('searchInput').value.toLowerCase();
+      const st = document.getElementById('statusFilter').value;
+      renderTable(orders.filter(o =>
+        (!q  || (o.id+o.customer).toLowerCase().includes(q)) &&
+        (!st || o.status === st)
+      ));
+    }
+
+    function viewOrder(id) {
+      const o = orders.find(x => x.id === id);
+      document.getElementById('viewOrderId').textContent = `Order ${o.id}`;
+      document.getElementById('viewOrderBody').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div><small style="color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600">Order ID</small><div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">${o.id}</div></div>
+          <div><small style="color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600">Date</small><div>${o.date}</div></div>
+          <div><small style="color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600">Customer</small><div style="font-weight:600">${o.customer}</div></div>
+          <div><small style="color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600">Payment</small><div>${o.payment}</div></div>
+          <div><small style="color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600">Items</small><div>${o.items}</div></div>
+          <div><small style="color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600">Status</small><div style="margin-top:3px">${statusBadge(o.status)}</div></div>
+        </div>
+        <div style="background:var(--purple-soft);border-radius:10px;padding:1rem;margin-top:1rem;text-align:center;">
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:4px">Total Amount</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;color:var(--accent);letter-spacing:-1px">₹${o.total.toLocaleString('en-IN')}</div>
+        </div>`;
+      new bootstrap.Modal(document.getElementById('viewModal')).show();
+    }
+
+    function editOrderStatus(id) {
+      const o = orders.find(x => x.id === id);
+      const newStatus = prompt(`Update status for ${id}\nCurrent: ${o.status}\nOptions: Processing / Shipped / Delivered / Cancelled`, o.status);
+      if (newStatus && ['Processing','Shipped','Delivered','Cancelled'].includes(newStatus)) {
+        o.status = newStatus; filterTable();
+      }
+    }
+
+    function cancelOrder(id) {
+      if (confirm(`Cancel order ${id}?`)) {
+        orders.find(x => x.id === id).status = 'Cancelled'; filterTable();
+      }
+    }
+
+    function openAdd() { ['oCust','oItems','oTotal'].forEach(i => document.getElementById(i).value = ''); }
+
+    function saveOrder() {
+      const cust = document.getElementById('oCust').value.trim();
+      if (!cust) { alert('Customer name required'); return; }
+      const newId = 'ORD-' + (parseInt(orders[0].id.split('-')[1]) + 1);
+      orders.unshift({
+        id: newId, customer: cust,
+        items: parseInt(document.getElementById('oItems').value) || 1,
+        total: parseFloat(document.getElementById('oTotal').value) || 0,
+        date: new Date().toISOString().split('T')[0],
+        payment: document.getElementById('oPayment').value,
+        status: document.getElementById('oStatus').value
+      });
+      bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
+      filterTable();
+    }
+
+    renderTable(orders);
+  </script>
+</body>
+</html>

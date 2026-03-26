@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Products</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .product-img-thumb {
+      width: 46px; height: 46px; border-radius: 11px;
+      background: var(--purple-soft); border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .filter-bar {
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.5rem;
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .filter-bar .form-select { border-radius: 8px; font-size: 0.85rem; padding: 0.42rem 0.8rem; max-width: 180px; }
+    .action-btn { background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:7px;font-size:0.85rem;transition:all 0.15s; }
+    .action-btn.edit { color:var(--accent2); } .action-btn.edit:hover { background:#fef3c7; }
+    .action-btn.del { color:#ef4444; } .action-btn.del:hover { background:#fee2e2; }
+    .action-btn.view { color:var(--accent3); } .action-btn.view:hover { background:#d1fae5; }
+    /* View product modal */
+    .prod-detail-grid { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+    .prod-detail-item label { font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600; }
+    .prod-detail-item p { font-size:0.92rem;font-weight:500;color:var(--ink);margin:3px 0 0; }
+    .price-big { font-family:'Syne',sans-serif;font-weight:800;font-size:1.6rem;color:var(--accent);letter-spacing:-1px; }
+    .category-pill {
+      display:inline-flex;align-items:center;gap:6px;
+      background:var(--purple-soft);color:var(--accent);
+      padding:4px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div>
+          <h2>Products</h2>
+          <p>Manage your entire product catalogue</p>
+        </div>
+        <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openAddModal()">
+          <i class="fa fa-plus"></i> Add Product
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="row g-3 mb-4">
+        <div class="col">
+          <div class="stat-card" style="padding:1rem 1.25rem;">
+            <div class="label">Total Products</div>
+            <div class="value" style="font-size:1.5rem">542</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="stat-card" style="padding:1rem 1.25rem;">
+            <div class="label">Active</div>
+            <div class="value" style="font-size:1.5rem;color:var(--accent3)">480</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="stat-card" style="padding:1rem 1.25rem;">
+            <div class="label">Low Stock</div>
+            <div class="value" style="font-size:1.5rem;color:var(--accent2)">12</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="stat-card" style="padding:1rem 1.25rem;">
+            <div class="label">Out of Stock</div>
+            <div class="value" style="font-size:1.5rem;color:var(--accent)">8</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="stat-card" style="padding:1rem 1.25rem;">
+            <div class="label">Categories</div>
+            <div class="value" style="font-size:1.5rem;color:var(--purple-light)">14</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="topbar-search" style="max-width:280px;">
+          <i class="fa fa-search search-icon"></i>
+          <input type="text" placeholder="Search products…" id="searchInput" oninput="filterTable()"/>
+        </div>
+        <select class="form-select" id="catFilter" onchange="filterTable()">
+          <option value="">All Categories</option>
+          <option>Electronics</option><option>Clothing</option>
+          <option>Footwear</option><option>Groceries</option><option>Kitchen</option>
+        </select>
+        <select class="form-select" id="statusFilter" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option>Active</option><option>Inactive</option><option>Low Stock</option>
+        </select>
+        <div class="ms-auto d-flex gap-2">
+          <button class="btn-ghost"><i class="fa fa-file-export me-1"></i>Export</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div style="overflow-x:auto;">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th><input type="checkbox" style="accent-color:var(--accent)"/></th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsBody"></tbody>
+          </table>
+        </div>
+        <div style="padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid var(--border);">
+          <span style="font-size:0.82rem;color:var(--muted)">Showing <span id="showCount">0</span> of <span id="totalCount">0</span> products</span>
+          <nav><ul class="pagination mb-0">
+            <li class="page-item disabled"><a class="page-link">&laquo;</a></li>
+            <li class="page-item active"><a class="page-link">1</a></li>
+            <li class="page-item"><a class="page-link">2</a></li>
+            <li class="page-item"><a class="page-link">&raquo;</a></li>
+          </ul></nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Product Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Add New Product</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Product Name</label>
+              <input class="form-control" id="pName" placeholder="e.g. Samsung Galaxy S25"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">SKU</label>
+              <input class="form-control" id="pSKU" placeholder="e.g. EL-0042"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="pCategory">
+                <option>Electronics</option><option>Clothing</option>
+                <option>Footwear</option><option>Groceries</option><option>Kitchen</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Price (₹)</label>
+              <input type="number" class="form-control" id="pPrice" placeholder="0.00"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Stock Qty</label>
+              <input type="number" class="form-control" id="pStock" placeholder="0"/>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="pDesc" rows="3" placeholder="Short product description…"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status</label>
+              <select class="form-select" id="pStatus">
+                <option>Active</option><option>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn-primary-custom" onclick="saveProduct()"><i class="fa fa-save"></i> Save Product</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Product Modal -->
+  <div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="viewModalTitle">Product Details</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="viewModalBody"></div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Confirm Delete</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><p style="font-size:0.9rem">Delete <strong id="delProductName"></strong>? This cannot be undone.</p></div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn-primary-custom" style="background:#ef4444" onclick="confirmDelete()"><i class="fa fa-trash"></i> Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Products');
+
+    const emojis = { Electronics:'📱', Clothing:'👕', Footwear:'👟', Groceries:'🥦', Kitchen:'🍳', Beauty:'💄', Sports:'⚽', Books:'📚', Furniture:'🪑', Toys:'🧸' };
+    let products = [
+      { id:1,  name:'Samsung 4K Smart TV 55"',  sku:'EL-0001', cat:'Electronics', price:65999,  stock:18, status:'Active',   desc:'55" UHD 4K display with Smart TV features, Tizen OS, and built-in Alexa.' },
+      { id:2,  name:'Nike Air Max 270',           sku:'FW-0012', cat:'Footwear',    price:9499,   stock:4,  status:'Low Stock', desc:'Lightweight running shoe with Max Air unit in heel for all-day comfort.' },
+      { id:3,  name:'Apple AirPods Pro (2nd Gen)',sku:'EL-0007', cat:'Electronics', price:22999,  stock:32, status:'Active',   desc:'Active Noise Cancellation, Transparency mode, Adaptive Audio.' },
+      { id:4,  name:"Levi's 501 Original Jeans", sku:'CL-0045', cat:'Clothing',    price:3499,   stock:0,  status:'Inactive', desc:'Classic straight-fit jeans in original 501 cut. 100% cotton denim.' },
+      { id:5,  name:'Instant Pot Duo 7-in-1',    sku:'KT-0003', cat:'Kitchen',     price:7499,   stock:15, status:'Active',   desc:'7-in-1 multi-use pressure cooker, slow cooker, rice cooker and more.' },
+      { id:6,  name:'Bosch TrueMixx Mixer',       sku:'KT-0009', cat:'Kitchen',     price:4299,   stock:7,  status:'Active',   desc:'550W motor with Indian Mixie jars, stainless steel blades.' },
+      { id:7,  name:'Woodland Men Sneakers',       sku:'FW-0034', cat:'Footwear',    price:2999,   stock:3,  status:'Low Stock', desc:'Leather upper sneakers with cushioned insole and rubber outsole.' },
+      { id:8,  name:'India Gate Basmati Rice 5kg',sku:'GR-0022', cat:'Groceries',   price:449,    stock:120,status:'Active',   desc:'Premium aged basmati rice with long grain and natural aroma.' },
+      { id:9,  name:'OnePlus Nord 4 5G',          sku:'EL-0015', cat:'Electronics', price:27999,  stock:22, status:'Active',   desc:'6.74" AMOLED, Snapdragon 7+ Gen 3, 50MP Sony camera, 100W charging.' },
+      { id:10, name:'Peter England Formal Shirt',  sku:'CL-0078', cat:'Clothing',    price:1299,   stock:0,  status:'Inactive', desc:'Slim fit cotton formal shirt. Machine washable. Available in 5 colours.' },
+      { id:11, name:'Sony WH-1000XM5',             sku:'EL-0021', cat:'Electronics', price:29999,  stock:9,  status:'Active',   desc:'Industry-leading noise cancellation, 30hr battery, LDAC support.' },
+      { id:12, name:'Figaro Olive Oil 1L',         sku:'GR-0041', cat:'Groceries',   price:899,    stock:55, status:'Active',   desc:'Pure olive oil, ideal for salads, cooking and sautéing.' },
+      { id:13, name:'Puma Virat Kohli Polo',       sku:'CL-0091', cat:'Clothing',    price:1999,   stock:40, status:'Active',   desc:'Moisture-wicking polo shirt with dryCELL technology.' },
+      { id:14, name:'Philips Air Fryer HD9252',    sku:'KT-0014', cat:'Kitchen',     price:8999,   stock:11, status:'Active',   desc:'1400W, 4.1L capacity, Rapid Air technology, up to 90% less fat.' },
+      { id:15, name:'Realme Buds Air 5 Pro',       sku:'EL-0029', cat:'Electronics', price:4999,   stock:38, status:'Active',   desc:'50dB ANC, LDAC, 360° Spatial Audio, 9.2mm driver.' },
+      { id:16, name:'Adidas Ultraboost 22',        sku:'FW-0051', cat:'Footwear',    price:14999,  stock:6,  status:'Low Stock', desc:'Responsive BOOST midsole, Primeknit+ upper, Continental rubber outsole.' },
+      { id:17, name:'Tata Sampann Chana Dal 1kg',  sku:'GR-0058', cat:'Groceries',   price:129,    stock:200,status:'Active',   desc:'Unpolished chana dal, rich in protein and fibre. No preservatives.' },
+      { id:18, name:'JBL Flip 6 Speaker',          sku:'EL-0033', cat:'Electronics', price:12999,  stock:14, status:'Active',   desc:'IP67 waterproof, 12hr battery, JBL Pro sound with PartyBoost.' },
+    ];
+    let editId = null, deleteId = null;
+
+    function statusBadge(s) {
+      if (s==='Active')    return '<span class="badge-status badge-active">Active</span>';
+      if (s==='Inactive')  return '<span class="badge-status badge-inactive">Inactive</span>';
+      if (s==='Low Stock') return '<span class="badge-status badge-low">Low Stock</span>';
+      return s;
+    }
+
+    function renderTable(data) {
+      document.getElementById('productsBody').innerHTML = data.map(p => `
+        <tr>
+          <td><input type="checkbox" style="accent-color:var(--accent)"/></td>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="product-img-thumb">${emojis[p.cat]||'📦'}</div>
+              <div>
+                <div style="font-weight:600;font-size:0.88rem">${p.name}</div>
+                <div style="font-size:0.7rem;color:var(--muted)">ID #${String(p.id).padStart(4,'0')}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-family:'Syne',sans-serif;font-size:0.78rem;color:var(--muted);font-weight:600">${p.sku}</td>
+          <td>
+            <span style="font-size:0.82rem;background:var(--purple-soft);color:var(--accent);padding:3px 10px;border-radius:20px;font-weight:500">${p.cat}</span>
+          </td>
+          <td style="font-family:'Syne',sans-serif;font-weight:800;color:var(--ink)">₹${p.price.toLocaleString('en-IN')}</td>
+          <td>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:${p.stock===0?'#ef4444':p.stock<=5?'var(--accent2)':'var(--ink)'}">${p.stock}</span>
+          </td>
+          <td>${statusBadge(p.status)}</td>
+          <td>
+            <button class="action-btn view" onclick="viewProduct(${p.id})" title="View"><i class="fa fa-eye"></i></button>
+            <button class="action-btn edit" onclick="editProduct(${p.id})" title="Edit"><i class="fa fa-pen"></i></button>
+            <button class="action-btn del" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,"\\'")}')"><i class="fa fa-trash"></i></button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('showCount').textContent = data.length;
+      document.getElementById('totalCount').textContent = products.length;
+    }
+
+    function filterTable() {
+      const q   = document.getElementById('searchInput').value.toLowerCase();
+      const cat = document.getElementById('catFilter').value;
+      const st  = document.getElementById('statusFilter').value;
+      renderTable(products.filter(p =>
+        (!q   || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)) &&
+        (!cat || p.cat === cat) &&
+        (!st  || p.status === st)
+      ));
+    }
+
+    function openAddModal() {
+      editId = null;
+      document.getElementById('modalTitle').textContent = 'Add New Product';
+      ['pName','pSKU','pPrice','pStock','pDesc'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('pStatus').value = 'Active';
+    }
+
+    function editProduct(id) {
+      const p = products.find(x => x.id === id);
+      editId = id;
+      document.getElementById('modalTitle').textContent = 'Edit Product';
+      document.getElementById('pName').value = p.name;
+      document.getElementById('pSKU').value  = p.sku;
+      document.getElementById('pPrice').value = p.price;
+      document.getElementById('pStock').value = p.stock;
+      document.getElementById('pCategory').value = p.cat;
+      document.getElementById('pStatus').value  = p.status;
+      document.getElementById('pDesc').value   = p.desc || '';
+      new bootstrap.Modal(document.getElementById('productModal')).show();
+    }
+
+    function saveProduct() {
+      const name = document.getElementById('pName').value.trim();
+      if (!name) { alert('Product name is required'); return; }
+      const data = {
+        name, sku: document.getElementById('pSKU').value,
+        cat: document.getElementById('pCategory').value,
+        price: parseFloat(document.getElementById('pPrice').value) || 0,
+        stock: parseInt(document.getElementById('pStock').value) || 0,
+        status: document.getElementById('pStatus').value,
+        desc: document.getElementById('pDesc').value
+      };
+      if (editId) {
+        const idx = products.findIndex(p => p.id === editId);
+        products[idx] = { ...products[idx], ...data };
+      } else {
+        products.push({ id: products.length + 1, ...data });
+      }
+      bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+      filterTable();
+    }
+
+    function viewProduct(id) {
+      const p = products.find(x => x.id === id);
+      document.getElementById('viewModalTitle').textContent = p.name;
+      document.getElementById('viewModalBody').innerHTML = `
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div style="width:64px;height:64px;border-radius:14px;background:var(--purple-soft);display:flex;align-items:center;justify-content:center;font-size:2rem">${emojis[p.cat]||'📦'}</div>
+          <div>
+            <div class="price-big">₹${p.price.toLocaleString('en-IN')}</div>
+            <span class="category-pill"><i class="fa fa-tag"></i>${p.cat}</span>
+          </div>
+        </div>
+        <div class="prod-detail-grid mb-3">
+          <div class="prod-detail-item"><label>SKU</label><p style="font-family:'Syne',sans-serif">${p.sku}</p></div>
+          <div class="prod-detail-item"><label>Status</label><p>${p.status === 'Active' ? '<span class="badge-status badge-active">Active</span>' : p.status === 'Inactive' ? '<span class="badge-status badge-inactive">Inactive</span>' : '<span class="badge-status badge-low">Low Stock</span>'}</p></div>
+          <div class="prod-detail-item"><label>Stock Qty</label><p style="font-family:'Syne',sans-serif;font-weight:700;color:${p.stock===0?'#ef4444':p.stock<=5?'var(--accent2)':'var(--accent3)'}">${p.stock} units</p></div>
+          <div class="prod-detail-item"><label>Product ID</label><p>#${String(p.id).padStart(4,'0')}</p></div>
+        </div>
+        ${p.desc ? `<div style="background:var(--purple-soft);border-radius:10px;padding:0.9rem 1rem;"><label style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;">Description</label><p style="font-size:0.88rem;color:var(--ink);margin-top:4px;line-height:1.6">${p.desc}</p></div>` : ''}
+      `;
+      new bootstrap.Modal(document.getElementById('viewModal')).show();
+    }
+
+    function deleteProduct(id, name) {
+      deleteId = id;
+      document.getElementById('delProductName').textContent = name;
+      new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+
+    function confirmDelete() {
+      products = products.filter(p => p.id !== deleteId);
+      bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+      filterTable();
+    }
+
+    renderTable(products);
+  </script>
+</body>
+</html>

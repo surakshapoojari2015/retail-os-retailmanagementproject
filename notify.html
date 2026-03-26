@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Notifications</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .notif-item { display:flex;align-items:flex-start;gap:14px;padding:1rem 1.5rem;border-bottom:1px solid var(--border);transition:background 0.15s;cursor:pointer; }
+    .notif-item:last-child { border-bottom:none; }
+    .notif-item:hover { background:#f8f7fd; }
+    .notif-item.unread { background:#f5f3ff;border-left:3px solid var(--accent); }
+    .notif-icon { width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0; }
+    .notif-title { font-size:0.88rem;font-weight:600;color:var(--ink); }
+    .notif-msg   { font-size:0.81rem;color:var(--muted);margin-top:2px;line-height:1.5; }
+    .notif-time  { font-size:0.7rem;color:var(--muted);white-space:nowrap;padding-top:3px; }
+    .unread-dot  { width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px; }
+    .filter-tabs { display:flex;gap:0.5rem;margin-bottom:1.5rem; }
+    .filter-tabs button { padding:0.45rem 1.1rem;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:0.82rem;cursor:pointer;color:var(--muted);transition:all 0.15s; }
+    .filter-tabs button.active { background:var(--accent);color:#fff;border-color:var(--accent); }
+    .filter-tabs button:not(.active):hover { border-color:var(--accent);color:var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div><h2>Notifications</h2><p>Stay updated with all system alerts and activities</p></div>
+        <button class="btn-ghost" onclick="markAllRead()"><i class="fa fa-check-double me-1"></i>Mark All Read</button>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Total</div><div class="value" style="font-size:1.5rem">24</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Unread</div><div class="value" style="font-size:1.5rem;color:var(--accent)" id="unreadCount">5</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Alerts</div><div class="value" style="font-size:1.5rem;color:var(--accent2)">3</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Orders</div><div class="value" style="font-size:1.5rem;color:var(--accent3)">8</div></div></div>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="active" onclick="filterNotifs('all',this)">All</button>
+        <button onclick="filterNotifs('order',this)">Orders</button>
+        <button onclick="filterNotifs('stock',this)">Stock Alerts</button>
+        <button onclick="filterNotifs('customer',this)">Customers</button>
+        <button onclick="filterNotifs('system',this)">System</button>
+      </div>
+
+      <div class="card" id="notifList"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Notifications');
+    const notifs = [
+      {id:1, type:'order',    icon:'fa-receipt',            iconBg:'#d1fae5',        iconColor:'#10b981',  title:'New Order Received',      msg:'Order #ORD-1082 placed by Priya Sharma for ₹12,499',              time:'2 min ago',   unread:true},
+      {id:2, type:'stock',    icon:'fa-triangle-exclamation',iconBg:'#fef3c7',       iconColor:'#d97706',  title:'Low Stock Warning',       msg:'Nike Air Max 270 is down to 4 units. Reorder point is 10.',         time:'18 min ago',  unread:true},
+      {id:3, type:'customer', icon:'fa-user-plus',           iconBg:'var(--purple-soft)',iconColor:'var(--accent)',title:'New Customer Registered', msg:'Priya Sharma (priya.s@gmail.com) created an account',        time:'1 hr ago',    unread:true},
+      {id:4, type:'stock',    icon:'fa-circle-xmark',        iconBg:'#fee2e2',       iconColor:'#dc2626',  title:'Out of Stock Alert',      msg:"Levi's 501 Jeans is now out of stock.",                           time:'2 hr ago',    unread:true},
+      {id:5, type:'order',    icon:'fa-circle-check',        iconBg:'#d1fae5',       iconColor:'#10b981',  title:'Order Delivered',         msg:'Order #ORD-1080 delivered to Meera Krishnan',                     time:'3 hr ago',    unread:true},
+      {id:6, type:'system',   icon:'fa-chart-bar',           iconBg:'var(--purple-soft)',iconColor:'var(--accent)',title:'Monthly Report Ready',   msg:'Your May 2025 sales report is ready to download',             time:'5 hr ago',    unread:false},
+      {id:7, type:'order',    icon:'fa-ban',                 iconBg:'#fee2e2',       iconColor:'#dc2626',  title:'Order Cancelled',         msg:'Order #ORD-1077 was cancelled by Suresh Reddy',                   time:'Yesterday',   unread:false},
+      {id:8, type:'stock',    icon:'fa-truck',               iconBg:'#d1fae5',       iconColor:'#10b981',  title:'Stock Replenished',       msg:'Basmati Rice 5kg — 100 units added by Fresh Farms',               time:'Yesterday',   unread:false},
+      {id:9, type:'customer', icon:'fa-star',                iconBg:'#fef3c7',       iconColor:'#d97706',  title:'Customer Review',         msg:'Arjun Mehta left a 5-star review on Samsung 4K Smart TV',         time:'2 days ago',  unread:false},
+      {id:10,type:'system',   icon:'fa-shield-halved',       iconBg:'var(--purple-soft)',iconColor:'var(--purple-light)',title:'Security Login',msg:'New login from IP 192.168.1.1 (Mangaluru, Karnataka)',         time:'2 days ago',  unread:false},
+      {id:11,type:'order',    icon:'fa-truck-fast',          iconBg:'#dbeafe',       iconColor:'#2563eb',  title:'Order Shipped',           msg:'Order #ORD-1073 shipped via BlueDart — Tracking #BD8823412',      time:'3 days ago',  unread:false},
+      {id:12,type:'system',   icon:'fa-gear',                iconBg:'var(--paper)',  iconColor:'var(--muted)',title:'System Update',         msg:'ROS updated to v2.4.1 — Bug fixes and performance improvements', time:'1 week ago',  unread:false},
+    ];
+
+    let activeFilter = 'all';
+
+    function renderNotifs(filter) {
+      const filtered = filter === 'all' ? notifs : notifs.filter(n => n.type === filter);
+      document.getElementById('notifList').innerHTML = filtered.map(n => `
+        <div class="notif-item ${n.unread?'unread':''}" id="notif-${n.id}" onclick="markRead(${n.id})">
+          <div class="notif-icon" style="background:${n.iconBg};color:${n.iconColor}"><i class="fa ${n.icon}"></i></div>
+          <div style="flex:1">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-msg">${n.msg}</div>
+          </div>
+          <div class="d-flex flex-column align-items-end gap-2">
+            <span class="notif-time">${n.time}</span>
+            ${n.unread ? '<div class="unread-dot"></div>' : ''}
+          </div>
+        </div>`).join('');
+      document.getElementById('unreadCount').textContent = notifs.filter(n => n.unread).length;
+    }
+
+    function filterNotifs(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.filter-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderNotifs(type);
+    }
+
+    function markRead(id) { const n = notifs.find(x=>x.id===id); if(n){n.unread=false; renderNotifs(activeFilter);} }
+    function markAllRead() { notifs.forEach(n=>n.unread=false); renderNotifs(activeFilter); }
+
+    renderNotifs('all');
+  </script>
+</body>
+</html>

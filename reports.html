@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Reports & Analytics</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .report-card { background:#fff;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;cursor:pointer; }
+    .report-card:hover { transform:translateY(-3px);box-shadow:0 8px 28px rgba(124,58,237,0.12); }
+    .report-card .rc-header { padding:1.25rem 1.5rem;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px; }
+    .report-card .rc-icon { width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0; }
+    .report-card .rc-body { padding:1.25rem 1.5rem; }
+    .chart-box { padding:1.25rem 1.5rem; }
+    .tab-nav { display:flex;gap:4px;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:4px;width:auto;margin:0; }
+    .tab-nav button { flex:none;padding:0.3rem 0.8rem;border:none;background:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:0.8rem;cursor:pointer;color:var(--muted);transition:all 0.15s; }
+    .tab-nav button.active { background:var(--accent);color:#fff;font-weight:500; }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div><h2>Reports & Analytics</h2><p>Deep insights into your retail performance</p></div>
+        <div class="d-flex gap-2">
+          <select class="form-select" style="font-size:0.85rem;padding:0.42rem 0.8rem;max-width:160px">
+            <option>Last 30 Days</option><option>Last 90 Days</option>
+            <option>This Year</option><option>Custom Range</option>
+          </select>
+          <button class="btn-primary-custom"><i class="fa fa-download"></i> Export PDF</button>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="stat-card"><div class="accent-bar" style="background:var(--accent)"></div><div class="stat-icon" style="background:var(--purple-soft);color:var(--accent)"><i class="fa fa-indian-rupee-sign"></i></div><div class="label">Revenue</div><div class="value">₹8,42,500</div><div class="trend up"><i class="fa fa-arrow-trend-up me-1"></i>+12.5%</div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="accent-bar" style="background:var(--accent3)"></div><div class="stat-icon" style="background:#d1fae5;color:var(--accent3)"><i class="fa fa-receipt"></i></div><div class="label">Orders</div><div class="value">1,284</div><div class="trend up"><i class="fa fa-arrow-trend-up me-1"></i>+8.2%</div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="accent-bar" style="background:var(--accent2)"></div><div class="stat-icon" style="background:#fef3c7;color:var(--accent2)"><i class="fa fa-basket-shopping"></i></div><div class="label">Avg. Order Value</div><div class="value">₹656</div><div class="trend up"><i class="fa fa-arrow-trend-up me-1"></i>+4.1%</div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="accent-bar" style="background:var(--purple-light)"></div><div class="stat-icon" style="background:var(--purple-soft);color:var(--purple-light)"><i class="fa fa-percent"></i></div><div class="label">Conversion Rate</div><div class="value">3.8%</div><div class="trend down"><i class="fa fa-arrow-trend-down me-1"></i>-0.3%</div></div></div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header-custom">
+              <span class="card-title">Revenue vs Orders</span>
+              <div class="tab-nav"><button class="active">Monthly</button><button>Weekly</button></div>
+            </div>
+            <div class="chart-box"><canvas id="revOrderChart" style="height:240px"></canvas></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header-custom"><span class="card-title">Payment Methods</span></div>
+            <div class="chart-box"><canvas id="payChart" style="height:200px"></canvas></div>
+            <div style="padding:0 1.5rem 1.25rem">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <div class="d-flex justify-content-between align-items-center"><span style="font-size:0.8rem;display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>UPI</span><span style="font-size:0.82rem;font-weight:700">42%</span></div>
+                <div class="d-flex justify-content-between align-items-center"><span style="font-size:0.8rem;display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent2);display:inline-block"></span>Card</span><span style="font-size:0.82rem;font-weight:700">31%</span></div>
+                <div class="d-flex justify-content-between align-items-center"><span style="font-size:0.8rem;display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent3);display:inline-block"></span>Cash</span><span style="font-size:0.82rem;font-weight:700">18%</span></div>
+                <div class="d-flex justify-content-between align-items-center"><span style="font-size:0.8rem;display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:var(--purple-light);display:inline-block"></span>Net Banking</span><span style="font-size:0.82rem;font-weight:700">9%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header-custom"><span class="card-title">Top Cities by Revenue</span></div>
+            <div class="chart-box"><canvas id="cityChart" style="height:220px"></canvas></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header-custom"><span class="card-title">Category Sales Trend</span></div>
+            <div class="chart-box"><canvas id="catTrendChart" style="height:220px"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="report-card">
+            <div class="rc-header"><div class="rc-icon" style="background:var(--purple-soft);color:var(--accent)"><i class="fa fa-chart-line"></i></div><span class="card-title">Sales Report</span></div>
+            <div class="rc-body"><p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">Detailed sales breakdown with product-level data</p><button class="btn-ghost w-100"><i class="fa fa-download me-1"></i> Download</button></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="report-card">
+            <div class="rc-header"><div class="rc-icon" style="background:#d1fae5;color:var(--accent3)"><i class="fa fa-users"></i></div><span class="card-title">Customer Report</span></div>
+            <div class="rc-body"><p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">Customer acquisition, retention and LTV analysis</p><button class="btn-ghost w-100"><i class="fa fa-download me-1"></i> Download</button></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="report-card">
+            <div class="rc-header"><div class="rc-icon" style="background:#fef3c7;color:var(--accent2)"><i class="fa fa-warehouse"></i></div><span class="card-title">Inventory Report</span></div>
+            <div class="rc-body"><p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">Stock levels, movement and reorder suggestions</p><button class="btn-ghost w-100"><i class="fa fa-download me-1"></i> Download</button></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="report-card">
+            <div class="rc-header"><div class="rc-icon" style="background:var(--purple-soft);color:var(--purple-light)"><i class="fa fa-file-invoice"></i></div><span class="card-title">Financial Report</span></div>
+            <div class="rc-body"><p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">P&L statement, expenses and profit margins</p><button class="btn-ghost w-100"><i class="fa fa-download me-1"></i> Download</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Reports & Analytics');
+
+    const ctx1 = document.getElementById('revOrderChart').getContext('2d');
+    const g1 = ctx1.createLinearGradient(0,0,0,220);
+    g1.addColorStop(0,'rgba(124,58,237,0.2)'); g1.addColorStop(1,'rgba(124,58,237,0)');
+    new Chart(ctx1, {
+      type:'line',
+      data:{
+        labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+        datasets:[
+          {label:'Revenue (₹K)',data:[420,380,510,470,620,580,700,650,720,680,810,842],borderColor:'#7c3aed',backgroundColor:g1,borderWidth:2.5,tension:0.4,fill:true,yAxisID:'y'},
+          {label:'Orders',      data:[85,72,98,88,124,110,142,128,145,132,165,172],    borderColor:'#10b981',backgroundColor:'transparent',borderWidth:2,tension:0.4,borderDash:[5,3],yAxisID:'y1'}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans',size:11},boxWidth:12,boxHeight:12}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#7c7c9a'}},y:{grid:{color:'rgba(124,58,237,0.05)'},ticks:{font:{family:'DM Sans',size:11},color:'#7c7c9a',callback:v=>'₹'+v+'k'}},y1:{position:'right',grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#10b981'}}}}
+    });
+
+    new Chart(document.getElementById('payChart'), {
+      type:'doughnut',
+      data:{labels:['UPI','Card','Cash','Net Banking'],datasets:[{data:[42,31,18,9],backgroundColor:['#7c3aed','#f59e0b','#10b981','#a78bfa'],borderWidth:0,hoverOffset:5}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}}}
+    });
+
+    new Chart(document.getElementById('cityChart'), {
+      type:'bar',
+      data:{
+        labels:['Bengaluru','Mumbai','Delhi','Chennai','Hyderabad','Pune','Kochi'],
+        datasets:[{label:'Revenue (₹K)',data:[185,162,138,115,98,76,54],backgroundColor:['#7c3aed','#6d28d9','#8b5cf6','#a78bfa','#7c3aed','#6d28d9','#8b5cf6'],borderRadius:7,borderSkipped:false}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#7c7c9a'}},y:{grid:{color:'rgba(124,58,237,0.05)'},ticks:{font:{family:'DM Sans',size:11},color:'#7c7c9a',callback:v=>'₹'+v+'k'}}}}
+    });
+
+    new Chart(document.getElementById('catTrendChart'), {
+      type:'line',
+      data:{
+        labels:['Q1','Q2','Q3','Q4'],
+        datasets:[
+          {label:'Electronics',data:[220,280,310,380],borderColor:'#7c3aed',backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:4},
+          {label:'Clothing',   data:[130,150,145,180],borderColor:'#f59e0b',backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:4},
+          {label:'Groceries',  data:[90,105,120,135], borderColor:'#10b981',backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:4},
+          {label:'Others',     data:[80,95,88,102],   borderColor:'#a78bfa',backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:4}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans',size:10},boxWidth:10,boxHeight:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#7c7c9a'}},y:{grid:{color:'rgba(124,58,237,0.05)'},ticks:{font:{family:'DM Sans',size:11},color:'#7c7c9a'}}}}
+    });
+  </script>
+</body>
+</html>

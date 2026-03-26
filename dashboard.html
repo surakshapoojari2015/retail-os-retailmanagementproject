@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-item .time { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+    .activity-item .msg { font-size: 0.84rem; color: var(--ink); }
+    .chart-container { position: relative; height: 220px; padding: 1.25rem 1.5rem 1rem; }
+    .donut-container { height: 200px; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .top-product {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0.65rem 0; border-bottom: 1px solid var(--border);
+    }
+    .top-product:last-child { border-bottom: none; }
+    .top-product .rank {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1rem; color: var(--muted); width: 22px; text-align: center;
+    }
+    .top-product .pname { font-size: 0.85rem; font-weight: 500; color: var(--ink); }
+    .top-product .pcat { font-size: 0.7rem; color: var(--muted); }
+    .top-product .psales { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; color: var(--ink); margin-left: auto; }
+    .progress-thin { height: 4px; border-radius: 2px; background: var(--border); margin-top: 4px; }
+    .progress-bar-custom { height: 100%; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+
+      <!-- Welcome bar -->
+      <div class="welcome-bar">
+        <div>
+          <h3>Good morning, Admin 👋</h3>
+          <p>Here's what's happening with your store today.</p>
+        </div>
+        <div class="date-pill"><i class="fa fa-calendar-alt me-2"></i><span id="todayDate"></span></div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="accent-bar" style="background:var(--accent)"></div>
+            <div class="stat-icon" style="background:var(--purple-soft);color:var(--accent)"><i class="fa fa-indian-rupee-sign"></i></div>
+            <div class="label">Total Revenue</div>
+            <div class="value">₹8,42,500</div>
+            <div class="trend up"><i class="fa fa-arrow-trend-up me-1"></i>+12.5% this month</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="accent-bar" style="background:var(--accent3)"></div>
+            <div class="stat-icon" style="background:#d1fae5;color:var(--accent3)"><i class="fa fa-receipt"></i></div>
+            <div class="label">Total Orders</div>
+            <div class="value">1,284</div>
+            <div class="trend up"><i class="fa fa-arrow-trend-up me-1"></i>+8.2% this month</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="accent-bar" style="background:var(--accent2)"></div>
+            <div class="stat-icon" style="background:#fef3c7;color:var(--accent2)"><i class="fa fa-users"></i></div>
+            <div class="label">Customers</div>
+            <div class="value">3,920</div>
+            <div class="trend up"><i class="fa fa-arrow-trend-up me-1"></i>+4.1% this month</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="accent-bar" style="background:var(--purple-light)"></div>
+            <div class="stat-icon" style="background:var(--purple-soft);color:var(--purple-light)"><i class="fa fa-box-open"></i></div>
+            <div class="label">Products</div>
+            <div class="value">542</div>
+            <div class="trend down"><i class="fa fa-triangle-exclamation me-1"></i>12 low stock</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-8">
+          <div class="card h-100">
+            <div class="card-header-custom">
+              <span class="card-title">Revenue Overview</span>
+              <div class="d-flex gap-2">
+                <button class="btn-ghost" style="padding:0.3rem 0.7rem;font-size:0.75rem">Week</button>
+                <button class="btn-primary-custom" style="padding:0.3rem 0.7rem;font-size:0.75rem">Month</button>
+                <button class="btn-ghost" style="padding:0.3rem 0.7rem;font-size:0.75rem">Year</button>
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header-custom"><span class="card-title">Sales by Category</span></div>
+            <div class="donut-container"><canvas id="donutChart"></canvas></div>
+            <div style="padding:0 1.5rem 1.25rem">
+              <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between"><div class="d-flex align-items-center gap-2"><div class="legend-dot" style="background:var(--accent)"></div><span style="font-size:0.8rem">Electronics</span></div><span style="font-size:0.8rem;color:var(--muted);font-weight:600">38%</span></div>
+                <div class="d-flex align-items-center justify-content-between"><div class="d-flex align-items-center gap-2"><div class="legend-dot" style="background:var(--accent2)"></div><span style="font-size:0.8rem">Clothing</span></div><span style="font-size:0.8rem;color:var(--muted);font-weight:600">24%</span></div>
+                <div class="d-flex align-items-center justify-content-between"><div class="d-flex align-items-center gap-2"><div class="legend-dot" style="background:var(--accent3)"></div><span style="font-size:0.8rem">Groceries</span></div><span style="font-size:0.8rem;color:var(--muted);font-weight:600">21%</span></div>
+                <div class="d-flex align-items-center justify-content-between"><div class="d-flex align-items-center gap-2"><div class="legend-dot" style="background:var(--purple-light)"></div><span style="font-size:0.8rem">Others</span></div><span style="font-size:0.8rem;color:var(--muted);font-weight:600">17%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom row -->
+      <div class="row g-3">
+        <div class="col-md-5">
+          <div class="card">
+            <div class="card-header-custom mb-2">
+              <span class="card-title">Top Products</span>
+              <a href="products.html" class="btn-ghost" style="padding:0.3rem 0.7rem;font-size:0.75rem">View All</a>
+            </div>
+            <div style="padding:0 1.5rem 1.25rem">
+              <div class="top-product">
+                <span class="rank">1</span>
+                <div style="flex:1"><div class="pname">Samsung 4K Smart TV</div><div class="pcat">Electronics</div><div class="progress-thin"><div class="progress-bar-custom" style="width:88%;background:var(--accent)"></div></div></div>
+                <span class="psales">₹1,24,000</span>
+              </div>
+              <div class="top-product">
+                <span class="rank">2</span>
+                <div style="flex:1"><div class="pname">Nike Air Max 270</div><div class="pcat">Footwear</div><div class="progress-thin"><div class="progress-bar-custom" style="width:72%;background:var(--accent2)"></div></div></div>
+                <span class="psales">₹89,500</span>
+              </div>
+              <div class="top-product">
+                <span class="rank">3</span>
+                <div style="flex:1"><div class="pname">Apple AirPods Pro</div><div class="pcat">Electronics</div><div class="progress-thin"><div class="progress-bar-custom" style="width:65%;background:var(--accent3)"></div></div></div>
+                <span class="psales">₹76,200</span>
+              </div>
+              <div class="top-product">
+                <span class="rank">4</span>
+                <div style="flex:1"><div class="pname">Levi's 501 Jeans</div><div class="pcat">Clothing</div><div class="progress-thin"><div class="progress-bar-custom" style="width:50%;background:var(--purple-light)"></div></div></div>
+                <span class="psales">₹52,800</span>
+              </div>
+              <div class="top-product">
+                <span class="rank">5</span>
+                <div style="flex:1"><div class="pname">Instant Pot Duo</div><div class="pcat">Kitchen</div><div class="progress-thin"><div class="progress-bar-custom" style="width:38%;background:#06b6d4"></div></div></div>
+                <span class="psales">₹38,400</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header-custom mb-2"><span class="card-title">Recent Activity</span></div>
+            <div style="padding:0 1.5rem 1.25rem">
+              <div class="activity-item">
+                <div class="activity-dot mt-1" style="background:var(--accent3)"></div>
+                <div><div class="msg">New order <strong>#ORD-1082</strong> placed</div><div class="time">2 minutes ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot mt-1" style="background:var(--accent2)"></div>
+                <div><div class="msg">Customer <strong>Priya S.</strong> registered</div><div class="time">18 minutes ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot mt-1" style="background:var(--accent)"></div>
+                <div><div class="msg"><strong>Samsung TV</strong> stock low (4 left)</div><div class="time">1 hour ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot mt-1" style="background:var(--purple-light)"></div>
+                <div><div class="msg">Report <strong>May 2025</strong> generated</div><div class="time">3 hours ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot mt-1" style="background:var(--accent3)"></div>
+                <div><div class="msg">Supplier <strong>TechZone</strong> invoice paid</div><div class="time">Yesterday</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-header-custom mb-3"><span class="card-title">Quick Actions</span></div>
+            <div style="padding:0 1.5rem 1.25rem;display:flex;flex-direction:column;gap:0.6rem;">
+              <a href="products.html" class="btn-primary-custom w-100 justify-content-center"><i class="fa fa-plus"></i> Add Product</a>
+              <a href="orders.html" class="btn-ghost w-100 justify-content-center"><i class="fa fa-receipt"></i> New Order</a>
+              <a href="customers.html" class="btn-ghost w-100 justify-content-center"><i class="fa fa-user-plus"></i> Add Customer</a>
+              <a href="reports.html" class="btn-ghost w-100 justify-content-center"><i class="fa fa-chart-bar"></i> View Reports</a>
+              <a href="inventory.html" class="btn-ghost w-100 justify-content-center"><i class="fa fa-warehouse"></i> Inventory</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Dashboard');
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+    // Revenue Chart
+    const rCtx = document.getElementById('revenueChart').getContext('2d');
+    const gradient = rCtx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, 'rgba(124,58,237,0.25)');
+    gradient.addColorStop(1, 'rgba(124,58,237,0)');
+    new Chart(rCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: [420000,380000,510000,470000,620000,580000,700000,650000,720000,680000,810000,842500],
+          borderColor: '#7c3aed', backgroundColor: gradient,
+          borderWidth: 2.5, tension: 0.4, fill: true,
+          pointBackgroundColor: '#7c3aed', pointRadius: 4, pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 11 }, color: '#7c7c9a' } },
+          y: { grid: { color: 'rgba(124,58,237,0.05)' }, ticks: { font: { family: 'DM Sans', size: 11 }, color: '#7c7c9a', callback: v => '₹' + (v/1000).toFixed(0) + 'k' } }
+        }
+      }
+    });
+
+    // Donut Chart
+    new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Electronics','Clothing','Groceries','Others'],
+        datasets: [{ data: [38,24,21,17], backgroundColor: ['#7c3aed','#f59e0b','#10b981','#a78bfa'], borderWidth: 0, hoverOffset: 6 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+</body>
+</html>

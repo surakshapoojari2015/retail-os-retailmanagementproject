@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — User Management</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .user-avatar-lg { width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;color:#fff;flex-shrink:0; }
+    .perm-tag { display:inline-block;background:var(--purple-soft);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.68rem;margin:2px;color:var(--accent);font-weight:500; }
+    .action-btn { background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:7px;font-size:0.85rem;transition:all 0.15s; }
+    .action-btn.edit { color:var(--accent2); } .action-btn.edit:hover { background:#fef3c7; }
+    .action-btn.del  { color:#ef4444; }       .action-btn.del:hover  { background:#fee2e2; }
+    .role-badge { padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600; }
+    .role-super   { background:var(--purple-soft);color:var(--accent); }
+    .role-manager { background:#fef3c7;color:#92400e; }
+    .role-staff   { background:#dbeafe;color:#1e40af; }
+    .role-viewer  { background:var(--paper);color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div><h2>User Management</h2><p>Manage system access, roles and permissions</p></div>
+        <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#userModal" onclick="openAdd()">
+          <i class="fa fa-user-plus"></i> Add User
+        </button>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Total Users</div><div class="value" style="font-size:1.5rem">8</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Active</div><div class="value" style="font-size:1.5rem;color:var(--accent3)">7</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Super Admins</div><div class="value" style="font-size:1.5rem;color:var(--accent)">1</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Managers</div><div class="value" style="font-size:1.5rem;color:var(--accent2)">3</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-custom" style="padding-bottom:1rem;border-bottom:1.5px solid var(--border);">
+          <span class="card-title">All Users</span>
+          <div class="topbar-search" style="max-width:240px;">
+            <i class="fa fa-search search-icon"></i>
+            <input type="text" placeholder="Search users…" id="searchInput" oninput="filterTable()"/>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="table-custom">
+            <thead>
+              <tr><th>User</th><th>Email</th><th>Role</th><th>Permissions</th><th>Last Login</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="userBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit User Modal -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="modalTitle">Add User</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" id="uName" placeholder="Admin User"/></div>
+            <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" id="uEmail" type="email" placeholder="user@retailos.com"/></div>
+            <div class="col-md-6"><label class="form-label">Role</label>
+              <select class="form-select" id="uRole"><option>Super Admin</option><option>Manager</option><option>Staff</option><option>Viewer</option></select>
+            </div>
+            <div class="col-md-6"><label class="form-label">Status</label>
+              <select class="form-select" id="uStatus"><option>Active</option><option>Inactive</option></select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Permissions</label>
+              <div class="d-flex gap-3 flex-wrap">
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="pDash" style="accent-color:var(--accent)" checked/><label class="form-check-label" for="pDash" style="font-size:0.85rem">Dashboard</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="pProd" style="accent-color:var(--accent)" checked/><label class="form-check-label" for="pProd" style="font-size:0.85rem">Products</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="pCust" style="accent-color:var(--accent)" checked/><label class="form-check-label" for="pCust" style="font-size:0.85rem">Customers</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="pOrd"  style="accent-color:var(--accent)" checked/><label class="form-check-label" for="pOrd"  style="font-size:0.85rem">Orders</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="pRep"  style="accent-color:var(--accent)"/><label class="form-check-label" for="pRep"  style="font-size:0.85rem">Reports</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="pSet"  style="accent-color:var(--accent)"/><label class="form-check-label" for="pSet"  style="font-size:0.85rem">Settings</label></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn-primary-custom" onclick="saveUser()"><i class="fa fa-save"></i> Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('User Management');
+    const colors = ['#7c3aed','#6d28d9','#10b981','#f59e0b','#06b6d4','#8b5cf6'];
+    const roleClass = {'Super Admin':'role-super','Manager':'role-manager','Staff':'role-staff','Viewer':'role-viewer'};
+    let users = [
+      {id:1,name:'Admin User',  email:'admin@retailos.com', role:'Super Admin',perms:['Dashboard','Products','Customers','Orders','Reports','Settings'],lastLogin:'Today, 9:12 AM', status:'Active'},
+      {id:2,name:'Ramesh Pillai',email:'ramesh@retailos.com',role:'Manager',   perms:['Dashboard','Products','Orders'],                               lastLogin:'Today, 8:45 AM', status:'Active'},
+      {id:3,name:'Meena Joshi', email:'meena@retailos.com', role:'Manager',   perms:['Dashboard','Customers','Reports'],                             lastLogin:'Yesterday, 5:30 PM',status:'Active'},
+      {id:4,name:'Sunil Kumar', email:'sunil@retailos.com', role:'Manager',   perms:['Dashboard','Products'],                                        lastLogin:'Yesterday, 2:15 PM',status:'Active'},
+      {id:5,name:'Asha Nair',   email:'asha@retailos.com',  role:'Staff',     perms:['Dashboard','Orders'],                                          lastLogin:'2 days ago',      status:'Active'},
+      {id:6,name:'Vikas Sharma',email:'vikas@retailos.com', role:'Staff',     perms:['Dashboard','Products'],                                        lastLogin:'3 days ago',      status:'Active'},
+      {id:7,name:'Anita Rao',   email:'anita@retailos.com', role:'Viewer',    perms:['Dashboard'],                                                   lastLogin:'1 week ago',      status:'Active'},
+      {id:8,name:'Deepak Mehta',email:'deepak@retailos.com',role:'Staff',     perms:['Dashboard','Customers'],                                       lastLogin:'2 weeks ago',     status:'Inactive'},
+    ];
+    let editId = null;
+
+    function initials(name) { return name.split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2); }
+
+    function renderTable(data) {
+      document.getElementById('userBody').innerHTML = data.map(u => `
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="user-avatar-lg" style="background:${colors[u.id%colors.length]}">${initials(u.name)}</div>
+              <div><div style="font-weight:600;font-size:0.88rem">${u.name}</div><div style="font-size:0.7rem;color:var(--muted)">UID-${String(u.id).padStart(3,'0')}</div></div>
+            </div>
+          </td>
+          <td style="font-size:0.84rem">${u.email}</td>
+          <td><span class="role-badge ${roleClass[u.role]||''}">${u.role}</span></td>
+          <td>${u.perms.map(p=>`<span class="perm-tag">${p}</span>`).join('')}</td>
+          <td style="font-size:0.81rem;color:var(--muted)">${u.lastLogin}</td>
+          <td><span class="badge-status ${u.status==='Active'?'badge-active':'badge-inactive'}">${u.status}</span></td>
+          <td>
+            <button class="action-btn edit" onclick="editUser(${u.id})"><i class="fa fa-pen"></i></button>
+            ${u.id!==1?`<button class="action-btn del" onclick="if(confirm('Delete user?')){users=users.filter(x=>x.id!==${u.id});filterTable();}"><i class="fa fa-trash"></i></button>`:''}
+          </td>
+        </tr>`).join('');
+    }
+
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      renderTable(users.filter(u => !q || (u.name+u.email+u.role).toLowerCase().includes(q)));
+    }
+
+    function openAdd() {
+      editId = null;
+      document.getElementById('modalTitle').textContent = 'Add User';
+      ['uName','uEmail'].forEach(i => document.getElementById(i).value = '');
+    }
+
+    function editUser(id) {
+      const u = users.find(x => x.id === id);
+      editId = id;
+      document.getElementById('modalTitle').textContent = 'Edit User';
+      document.getElementById('uName').value   = u.name;
+      document.getElementById('uEmail').value  = u.email;
+      document.getElementById('uRole').value   = u.role;
+      document.getElementById('uStatus').value = u.status;
+      new bootstrap.Modal(document.getElementById('userModal')).show();
+    }
+
+    function saveUser() {
+      const name = document.getElementById('uName').value.trim();
+      if (!name) { alert('Name required'); return; }
+      const perms = [];
+      if(document.getElementById('pDash').checked) perms.push('Dashboard');
+      if(document.getElementById('pProd').checked) perms.push('Products');
+      if(document.getElementById('pCust').checked) perms.push('Customers');
+      if(document.getElementById('pOrd').checked)  perms.push('Orders');
+      if(document.getElementById('pRep').checked)  perms.push('Reports');
+      if(document.getElementById('pSet').checked)  perms.push('Settings');
+      const data = { name, email:document.getElementById('uEmail').value, role:document.getElementById('uRole').value, status:document.getElementById('uStatus').value, perms, lastLogin:'Just now' };
+      if (editId) { const i = users.findIndex(u => u.id === editId); users[i] = {...users[i],...data}; }
+      else users.push({id:users.length+1,...data});
+      bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+      filterTable();
+    }
+
+    renderTable(users);
+  </script>
+</body>
+</html>

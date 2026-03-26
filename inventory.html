@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Inventory</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .stock-bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 4px; }
+    .stock-bar-fill { height: 100%; border-radius: 3px; }
+    .action-btn { background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:7px;font-size:0.85rem;transition:all 0.15s; }
+    .action-btn.edit { color:var(--accent2); } .action-btn.edit:hover { background:#fef3c7; }
+    .alert-card {
+      border-radius: 12px; padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .alert-card.warning { background:#fef3c7;border:1.5px solid #fde68a; }
+    .alert-card.danger  { background:#fee2e2;border:1.5px solid #fecaca; }
+    .alert-card .alert-icon { font-size: 1.1rem; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div><h2>Inventory</h2><p>Monitor stock levels and warehouse operations</p></div>
+        <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#adjustModal">
+          <i class="fa fa-sliders"></i> Adjust Stock
+        </button>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Total SKUs</div><div class="value" style="font-size:1.5rem">542</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">In Stock</div><div class="value" style="font-size:1.5rem;color:var(--accent3)">498</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Low Stock</div><div class="value" style="font-size:1.5rem;color:var(--accent2)">12</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Out of Stock</div><div class="value" style="font-size:1.5rem;color:#ef4444">8</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Stock Value</div><div class="value" style="font-size:1.5rem;color:var(--accent)">₹48L</div></div></div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="alert-card warning">
+            <div class="alert-icon" style="color:#d97706"><i class="fa fa-triangle-exclamation"></i></div>
+            <div>
+              <div style="font-weight:600;font-size:0.88rem">Low Stock Alert</div>
+              <div style="font-size:0.8rem;color:#92400e">Nike Air Max 270 — only 4 units left</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="alert-card warning">
+            <div class="alert-icon" style="color:#d97706"><i class="fa fa-triangle-exclamation"></i></div>
+            <div>
+              <div style="font-weight:600;font-size:0.88rem">Low Stock Alert</div>
+              <div style="font-size:0.8rem;color:#92400e">Woodland Sneakers — only 3 units left</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="alert-card danger">
+            <div class="alert-icon" style="color:#dc2626"><i class="fa fa-circle-xmark"></i></div>
+            <div>
+              <div style="font-weight:600;font-size:0.88rem;color:#dc2626">Out of Stock</div>
+              <div style="font-size:0.8rem;color:#991b1b">Levi's 501 Jeans — 0 units</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-custom mb-0" style="padding-bottom:1rem;border-bottom:1.5px solid var(--border);">
+          <span class="card-title">Stock Levels</span>
+          <div class="topbar-search" style="max-width:220px;">
+            <i class="fa fa-search search-icon"></i>
+            <input type="text" placeholder="Search…" id="searchInput" oninput="filterInv()"/>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Product</th><th>SKU</th><th>Category</th>
+                <th>In Stock</th><th>Reserved</th><th>Available</th>
+                <th>Reorder Point</th><th>Stock Level</th><th>Status</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adjust Stock Modal -->
+  <div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Adjust Stock</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label">Product</label>
+            <select class="form-select" id="adjProduct">
+              <option>Samsung 4K Smart TV</option><option>Nike Air Max 270</option>
+              <option>Apple AirPods Pro</option><option>Levi's 501 Jeans</option>
+            </select>
+          </div>
+          <div class="mb-3"><label class="form-label">Adjustment Type</label>
+            <select class="form-select" id="adjType">
+              <option>Add Stock</option><option>Remove Stock</option><option>Set Exact Quantity</option>
+            </select>
+          </div>
+          <div class="mb-3"><label class="form-label">Quantity</label><input type="number" class="form-control" placeholder="0"/></div>
+          <div class="mb-3"><label class="form-label">Reason</label><textarea class="form-control" rows="2" placeholder="e.g. New shipment received…"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn-primary-custom" data-bs-dismiss="modal"><i class="fa fa-check"></i> Apply Adjustment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Inventory');
+    const inventory = [
+      {name:'Samsung 4K Smart TV',    sku:'EL-0001',cat:'Electronics',inStock:18, reserved:3, reorder:5},
+      {name:'Nike Air Max 270',        sku:'FW-0012',cat:'Footwear',   inStock:4,  reserved:1, reorder:10},
+      {name:'Apple AirPods Pro',       sku:'EL-0007',cat:'Electronics',inStock:32, reserved:5, reorder:8},
+      {name:"Levi's 501 Jeans",        sku:'CL-0045',cat:'Clothing',   inStock:0,  reserved:0, reorder:15},
+      {name:'Instant Pot Duo',         sku:'KT-0003',cat:'Kitchen',    inStock:15, reserved:2, reorder:5},
+      {name:'Bosch Mixer Grinder',     sku:'KT-0009',cat:'Kitchen',    inStock:7,  reserved:1, reorder:5},
+      {name:'Woodland Sneakers',       sku:'FW-0034',cat:'Footwear',   inStock:3,  reserved:0, reorder:10},
+      {name:'Basmati Rice 5kg',        sku:'GR-0022',cat:'Groceries',  inStock:120,reserved:20,reorder:30},
+      {name:'OnePlus Nord 4',          sku:'EL-0015',cat:'Electronics',inStock:22, reserved:4, reorder:8},
+      {name:'Peter England Shirt',     sku:'CL-0078',cat:'Clothing',   inStock:0,  reserved:0, reorder:20},
+      {name:'Sony WH-1000XM5',         sku:'EL-0021',cat:'Electronics',inStock:9,  reserved:2, reorder:5},
+      {name:'Olive Oil 1L',            sku:'GR-0041',cat:'Groceries',  inStock:55, reserved:8, reorder:20},
+    ];
+
+    function getStatus(item) {
+      const avail = item.inStock - item.reserved;
+      if (item.inStock === 0)      return {label:'Out of Stock',cls:'badge-inactive',pct:0,       color:'#ef4444'};
+      if (avail <= item.reorder)   return {label:'Low Stock',   cls:'badge-low',     pct:Math.min(100,avail/item.reorder*50),color:'#f59e0b'};
+      return                              {label:'In Stock',    cls:'badge-ok',      pct:Math.min(100,avail/50*100),         color:'#10b981'};
+    }
+
+    function renderInv(data) {
+      document.getElementById('invBody').innerHTML = data.map(item => {
+        const st = getStatus(item);
+        const avail = item.inStock - item.reserved;
+        return `<tr>
+          <td style="font-weight:600;font-size:0.88rem">${item.name}</td>
+          <td style="font-size:0.76rem;color:var(--muted);font-family:'Syne',sans-serif;font-weight:600">${item.sku}</td>
+          <td><span style="background:var(--purple-soft);color:var(--accent);font-size:0.78rem;padding:3px 9px;border-radius:20px;font-weight:500">${item.cat}</span></td>
+          <td style="font-family:'Syne',sans-serif;font-weight:700">${item.inStock}</td>
+          <td style="color:var(--muted)">${item.reserved}</td>
+          <td style="font-family:'Syne',sans-serif;font-weight:700;color:${avail<=item.reorder?'#ef4444':'var(--ink)'}">${avail}</td>
+          <td style="color:var(--muted)">${item.reorder}</td>
+          <td style="min-width:100px"><div class="stock-bar"><div class="stock-bar-fill" style="width:${st.pct}%;background:${st.color}"></div></div></td>
+          <td><span class="badge-status ${st.cls}">${st.label}</span></td>
+          <td><button class="action-btn edit" data-bs-toggle="modal" data-bs-target="#adjustModal"><i class="fa fa-sliders"></i></button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function filterInv() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      renderInv(inventory.filter(i => !q || (i.name+i.sku+i.cat).toLowerCase().includes(q)));
+    }
+
+    renderInv(inventory);
+  </script>
+</body>
+</html>

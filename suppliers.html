@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROS — Suppliers</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="layout.css" rel="stylesheet"/>
+  <style>
+    .supplier-logo { width:44px;height:44px;border-radius:11px;background:var(--purple-soft);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0; }
+    .action-btn { background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:7px;font-size:0.85rem;transition:all 0.15s; }
+    .action-btn.edit { color:var(--accent2); } .action-btn.edit:hover { background:#fef3c7; }
+    .action-btn.del  { color:#ef4444; }       .action-btn.del:hover  { background:#fee2e2; }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <div class="page-content">
+      <div class="page-header d-flex align-items-start justify-content-between">
+        <div><h2>Suppliers</h2><p>Manage your supplier relationships and purchase orders</p></div>
+        <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#supplierModal" onclick="openAdd()">
+          <i class="fa fa-plus"></i> Add Supplier
+        </button>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Total Suppliers</div><div class="value" style="font-size:1.5rem">28</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Active</div><div class="value" style="font-size:1.5rem;color:var(--accent3)">22</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Pending POs</div><div class="value" style="font-size:1.5rem;color:var(--accent2)">7</div></div></div>
+        <div class="col"><div class="stat-card" style="padding:1rem 1.25rem;"><div class="label">Total Purchases</div><div class="value" style="font-size:1.5rem;color:var(--accent)">₹82L</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-custom" style="padding-bottom:1rem;border-bottom:1.5px solid var(--border);">
+          <span class="card-title">All Suppliers</span>
+          <div class="topbar-search" style="max-width:240px;">
+            <i class="fa fa-search search-icon"></i>
+            <input type="text" placeholder="Search suppliers…" id="searchInput" oninput="filterTable()"/>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Supplier</th><th>Contact</th><th>Category</th><th>Location</th>
+                <th>Products</th><th>Total Orders</th><th>Rating</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="suppBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal fade" id="supplierModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="modalTitle">Add Supplier</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Company Name</label><input class="form-control" id="sName" placeholder="TechZone Pvt Ltd"/></div>
+            <div class="col-md-6"><label class="form-label">Contact Person</label><input class="form-control" id="sContact" placeholder="John Doe"/></div>
+            <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" id="sEmail" placeholder="contact@supplier.com"/></div>
+            <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" id="sPhone" placeholder="+91 98765 43210"/></div>
+            <div class="col-md-4"><label class="form-label">Category</label>
+              <select class="form-select" id="sCat"><option>Electronics</option><option>Clothing</option><option>Footwear</option><option>Groceries</option><option>Kitchen</option></select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Location</label><input class="form-control" id="sCity" placeholder="Mumbai"/></div>
+            <div class="col-md-4"><label class="form-label">Status</label>
+              <select class="form-select" id="sStatus"><option>Active</option><option>Inactive</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn-primary-custom" onclick="saveSupplier()"><i class="fa fa-save"></i> Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    renderLayout('Suppliers');
+    const catEmoji = {Electronics:'💻',Clothing:'👕',Footwear:'👟',Groceries:'🥦',Kitchen:'🍳'};
+    let suppliers = [
+      {id:1,name:'TechZone Pvt Ltd',contact:'Rahul Gupta',  email:'rahul@techzone.in',  phone:'+91 98001 23456',cat:'Electronics',city:'Mumbai',   products:48,orders:124,rating:4.8,status:'Active'},
+      {id:2,name:'Fashion Hub',      contact:'Meena Joshi',  email:'meena@fashionhub.com',phone:'+91 99123 45678',cat:'Clothing',   city:'Surat',    products:92,orders:89, rating:4.2,status:'Active'},
+      {id:3,name:'Fresh Farms',      contact:'Ramesh Pillai',email:'ramesh@freshfarms.in',phone:'+91 88234 56789',cat:'Groceries',  city:'Bengaluru',products:34,orders:210,rating:4.6,status:'Active'},
+      {id:4,name:'Sole Kingdom',     contact:'Asha Nair',    email:'asha@solekingdom.in', phone:'+91 77345 67890',cat:'Footwear',   city:'Chennai',  products:27,orders:65, rating:3.9,status:'Inactive'},
+      {id:5,name:'KitchenWorld',     contact:'Vikas Sharma', email:'vikas@kitchenworld.in',phone:'+91 90456 78901',cat:'Kitchen',    city:'Delhi',    products:55,orders:78, rating:4.5,status:'Active'},
+      {id:6,name:'GadgetPro',        contact:'Sunil Mehta',  email:'sunil@gadgetpro.in',  phone:'+91 80567 89012',cat:'Electronics',city:'Hyderabad',products:31,orders:97, rating:4.7,status:'Active'},
+      {id:7,name:'WearHouse',        contact:'Anita Rao',    email:'anita@wearhouse.in',  phone:'+91 70678 90123',cat:'Clothing',   city:'Pune',     products:68,orders:42, rating:4.0,status:'Active'},
+    ];
+    let editId = null;
+
+    function stars(r) {
+      return `<span style="color:var(--accent2);font-size:0.85rem">${'★'.repeat(Math.round(r))}${'☆'.repeat(5-Math.round(r))}</span> <span style="font-size:0.76rem;color:var(--muted)">${r}</span>`;
+    }
+
+    function renderTable(data) {
+      document.getElementById('suppBody').innerHTML = data.map(s => `
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="supplier-logo">${catEmoji[s.cat]||'📦'}</div>
+              <div>
+                <div style="font-weight:600;font-size:0.88rem">${s.name}</div>
+                <div style="font-size:0.7rem;color:var(--muted)">${s.email}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:0.84rem">${s.contact}<br/><span style="font-size:0.7rem;color:var(--muted)">${s.phone}</span></td>
+          <td><span style="background:var(--purple-soft);color:var(--accent);font-size:0.78rem;padding:3px 9px;border-radius:20px;font-weight:500">${s.cat}</span></td>
+          <td style="font-size:0.85rem">${s.city}</td>
+          <td style="font-family:'Syne',sans-serif;font-weight:700">${s.products}</td>
+          <td style="font-family:'Syne',sans-serif;font-weight:700">${s.orders}</td>
+          <td>${stars(s.rating)}</td>
+          <td><span class="badge-status ${s.status==='Active'?'badge-active':'badge-inactive'}">${s.status}</span></td>
+          <td>
+            <button class="action-btn edit" onclick="editSupplier(${s.id})"><i class="fa fa-pen"></i></button>
+            <button class="action-btn del"  onclick="if(confirm('Delete supplier?')){suppliers=suppliers.filter(x=>x.id!==${s.id});filterTable();}"><i class="fa fa-trash"></i></button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      renderTable(suppliers.filter(s => !q || (s.name+s.contact+s.cat+s.city).toLowerCase().includes(q)));
+    }
+
+    function openAdd() {
+      editId = null;
+      document.getElementById('modalTitle').textContent = 'Add Supplier';
+      ['sName','sContact','sEmail','sPhone','sCity'].forEach(i => document.getElementById(i).value = '');
+    }
+
+    function editSupplier(id) {
+      const s = suppliers.find(x => x.id === id);
+      editId = id;
+      document.getElementById('modalTitle').textContent = 'Edit Supplier';
+      document.getElementById('sName').value    = s.name;
+      document.getElementById('sContact').value = s.contact;
+      document.getElementById('sEmail').value   = s.email;
+      document.getElementById('sPhone').value   = s.phone;
+      document.getElementById('sCat').value     = s.cat;
+      document.getElementById('sCity').value    = s.city;
+      document.getElementById('sStatus').value  = s.status;
+      new bootstrap.Modal(document.getElementById('supplierModal')).show();
+    }
+
+    function saveSupplier() {
+      const name = document.getElementById('sName').value.trim();
+      if (!name) { alert('Company name required'); return; }
+      const data = { name, contact:document.getElementById('sContact').value, email:document.getElementById('sEmail').value, phone:document.getElementById('sPhone').value, cat:document.getElementById('sCat').value, city:document.getElementById('sCity').value, status:document.getElementById('sStatus').value };
+      if (editId) { const i = suppliers.findIndex(s => s.id === editId); suppliers[i] = {...suppliers[i],...data}; }
+      else suppliers.push({id:suppliers.length+1,products:0,orders:0,rating:5.0,...data});
+      bootstrap.Modal.getInstance(document.getElementById('supplierModal')).hide();
+      filterTable();
+    }
+
+    renderTable(suppliers);
+  </script>
+</body>
+</html>
