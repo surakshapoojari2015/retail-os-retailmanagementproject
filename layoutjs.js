@@ -1,4 +1,4 @@
-// layout.js — ROS Retail OS — inject sidebar + topbar
+
 function getCurrentPage() {
   return window.location.pathname.split('/').pop() || 'dashboard.html';
 }
